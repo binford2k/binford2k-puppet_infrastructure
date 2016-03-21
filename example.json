@@ -1,0 +1,27 @@
+{
+  "environment": "production",
+  "applications": {
+    "Webapp[pao]": {
+      "Db[pao_db]": {
+        "produces": [ "Sql[pao_db]" ],
+        "consumes": [],
+        "node": "agent1" },
+      "Web[pao_w1]": {
+        "produces": [ "Http[pao_w1]" ],
+        "consumes": [ "Sql[pao_db]" ],
+        "node": "agent2" },
+      "Web[pao_w2]": {
+        "produces": [ "Http[pao_w2]" ],
+        "consumes": [ "Sql[pao_db]" ],
+        "node": "agent3" },
+      "Web[pao_w3]": {
+        "produces": [ "Http[pao_w3]" ],
+        "consumes": [ "Sql[pao_db]" ],
+        "node": "agent4" },
+      "Lb[pao_lb]": {
+        "produces": [],
+        "consumes": [ "Http[pao_w1]", "Http[pao_w2]", "Http[pao_w3]" ],
+        "node": "agent5" }
+    }
+  }
+}
