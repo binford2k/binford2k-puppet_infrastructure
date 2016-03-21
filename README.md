@@ -10,10 +10,6 @@ dependencies and a run order, then run nodes concurrently to meet requirements,
 skipping any nodes with failed dependencies. It can use either MCollective or
 SSH to orchestrate Puppet runs.
 
-**Caveat**: MCollective functionality depends on a custom MCollective agent to
-manage the foreground Puppet agent execution. This agent does not exist yet, so
-the `mco` transport backend is currently inoperable.
-
 This is very *very* early in development, so it most likely won't work for you.
 I highly suggest not even trying it out yet.
 

@@ -137,21 +137,37 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
   end
 
   def transport_mco(node)
-    Puppet.warning "The mco driver is currently unimplemented"
-    return true
-
     include MCollective::RPC
-    exitcode = 0
 
-    mc = rpcclient("infrastructure")
-    mc.ttl = 600 # give the run time to complete
+    mc = rpcclient('puppet')
     mc.discover(:nodes => [node])
-    mc.runonce() do |resp|
+
+    transport_mco_wait(mc, 120)
+    mc.runonce()
+    transport_mco_wait(mc, 600)
+
+    exitcode = 0
+    mc.last_run_summary() do |resp|
       # we should only have a single response, but just in case, lets add
-      exitcode += resp[:body][:statuscode]
+      exitcode += resp[:body][:data][:failed_resources]
     end
 
     exitcode == 0
+  end
+
+  def transport_mco_wait(mc, timeout, delay=5)
+    time = 0
+    done = false
+    while not done do
+      mc.status() { |resp| done = ! resp[:body][:data][:applying] }
+
+      unless done
+        time += delay
+        raise 'Timed out waiting for Puppet run to finish' if time > timeout
+
+        sleep delay
+      end
+    end
   end
 
   # walk through the catalog using a modified mark & sweep algorithm.
