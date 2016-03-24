@@ -4,6 +4,7 @@ require 'puppet/network/http_pool'
 
 begin
   require 'mcollective'
+  include MCollective::RPC
 rescue LoadError
   Puppet.warning 'MCollective functionality unavailable.'
 end
@@ -137,19 +138,23 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
   end
 
   def transport_mco(node)
-    include MCollective::RPC
-
     mc = rpcclient('puppet')
     mc.discover(:nodes => [node])
 
     transport_mco_wait(mc, 120)
     mc.runonce()
+    # we can rely on timestamps being within a few seconds of one another or mco wouldn't work anyway
+    start = Time.now.to_i
     transport_mco_wait(mc, 600)
 
     exitcode = 0
     mc.last_run_summary() do |resp|
       # we should only have a single response, but just in case, lets add
+      # a successful run has zero failed resources.
       exitcode += resp[:body][:data][:failed_resources]
+      # if the timestamp is greater than the time we kicked off the run, then ours failed
+      # in a way that didn't generate a report properly
+      exitcode += 1 if start > resp[:body][:data][:lastrun]
     end
 
     exitcode == 0
@@ -230,7 +235,7 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
         runlist.delete(node)
       end
 
-      sleep 5
+      sleep 5 if block_given?
     end
 
     puts "\nNode failues:" unless failed.empty?
