@@ -145,6 +145,7 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
     mc.runonce()
     # we can rely on timestamps being within a few seconds of one another or mco wouldn't work anyway
     start = Time.now.to_i
+    sleep 5
     transport_mco_wait(mc, 600)
 
     exitcode = 0
