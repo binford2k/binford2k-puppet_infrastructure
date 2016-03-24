@@ -109,6 +109,11 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
           transport_mco(node)
         end
 
+        # oh my fucking christ
+        def self.options
+          []
+        end
+
       else
         raise "Unknown transport backend #{options[:transport]}."
       end
