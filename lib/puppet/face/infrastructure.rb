@@ -4,7 +4,6 @@ require 'puppet/network/http_pool'
 
 begin
   require 'mcollective'
-  include MCollective::RPC
 rescue LoadError
   Puppet.warning 'MCollective functionality unavailable.'
 end
@@ -109,11 +108,6 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
           transport_mco(node)
         end
 
-        # oh my fucking christ
-        def self.options
-          []
-        end
-
       else
         raise "Unknown transport backend #{options[:transport]}."
       end
@@ -160,8 +154,10 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
   end
 
   def transport_mco(node)
-    mc = rpcclient('puppet', {:options => MCollective::Util.default_options})
-    #mc = MCollective::RPC.instance_method(:rpcclient).bind(self).call('puppet', {:options => MCollective::Util.default_options})
+    mc = MCollective::RPC::Client.new('puppet',
+            :configfile => MCollective::Util.config_file_for_user,
+            :options    => MCollective::Util.default_options,
+         )
     mc.discover(:nodes => [node])
     mc.progress = false
 
