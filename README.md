@@ -122,6 +122,19 @@ puppet_authorization::rule { 'puppetlabs environment':
 }
 ```
 
+#### MCollective auth configuration
+
+This will also require that the user account you're running as be configured to
+run both Puppet commands and MCollective commands. You should follow instructions
+to configure this either manually or via the Puppet module:
+
+* https://docs.puppetlabs.com/mcollective/configure/client.html#the-client-config-files
+* https://forge.puppetlabs.com/puppet/mcollective#mcollectiveuser-defined-type
+
+*Note*: If you're testing this on PE, you can perform this configuration by copying
+or symlinking `peadmin`'s MCollective client config from `~peadmin/.mcollective*`.
+Totally unsupported and not recommended, of course.
+
 ## Disclaimer
 
 I take no liability for the use of this module.
