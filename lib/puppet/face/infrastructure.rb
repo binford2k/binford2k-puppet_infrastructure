@@ -43,11 +43,7 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
 
     when_invoked do |options|
       catalog = get_catalog()
-
-      if catalog['applications'].empty?
-        Puppet.warning 'Empty environment catalog'
-        next
-      end
+      next if catalog['applications'].empty?
 
       puts
       puts 'Applications:'
@@ -73,7 +69,17 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
     returns "The infrastructure run report."
 
     option "-t TRANSPORT", "--transport TRANSPORT" do
-      summary "Which transport backend (ssh/mco) to use. Defaults to 'mco'."
+      summary "Which transport backend (ssh/mco) to use. Intelligently defaults based on gems installed."
+      default_to do
+        case
+        when defined?(MCollective::RPC)
+          'mco'
+        when defined?(Net::SSH)
+          'ssh'
+        else
+          raise 'No transport backends possible. Please install MCollective or Net/SSH'
+        end
+      end
     end
 
     option "-m MAPPING", "--map MAPPING" do
@@ -86,6 +92,7 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
 
     when_invoked do |options|
       catalog = get_catalog()
+      next if catalog['applications'].empty?
 
       case options[:transport]
       when 'ssh'
@@ -97,11 +104,16 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
           transport_ssh(address, 'root', key)
         end
 
-      else
+      when 'mco'
         walk(catalog) do |node|
           transport_mco(node)
         end
+
+      else
+        raise "Unknown transport backend #{options[:transport]}."
       end
+
+      nil
     end
   end
 
@@ -112,6 +124,11 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
     unless catalog = PSON.load(connection.request_get(endpoint, {"Accept" => 'application/json'}).body)
       raise "Error retrieving environment catalog for #{environment}."
     end
+
+    # compilation failures, usually
+    raise catalog['message'] unless catalog.include? 'applications'
+
+    Puppet.warning 'Empty environment catalog' if catalog['applications'].empty?
 
     #JSON.parse(File.read('example.json'))
     catalog
@@ -138,11 +155,13 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
   end
 
   def transport_mco(node)
-    mc = rpcclient('puppet')
+    mc = rpcclient('puppet', {:options => MCollective::Util.default_options})
+    #mc = MCollective::RPC.instance_method(:rpcclient).bind(self).call('puppet', {:options => MCollective::Util.default_options})
     mc.discover(:nodes => [node])
+    mc.progress = false
 
     transport_mco_wait(mc, 120)
-    mc.runonce()
+    mc.runonce(:force => true)
     # we can rely on timestamps being within a few seconds of one another or mco wouldn't work anyway
     start = Time.now.to_i
     sleep 5
