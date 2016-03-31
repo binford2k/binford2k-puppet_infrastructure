@@ -41,7 +41,7 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
     default
 
     when_invoked do |options|
-      catalog = get_catalog()
+      catalog = get_catalog(Puppet[:environment])
       next if catalog['applications'].empty?
 
       puts
@@ -90,7 +90,7 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
     end
 
     when_invoked do |options|
-      catalog = get_catalog()
+      catalog = get_catalog(Puppet[:environment])
       next if catalog['applications'].empty?
 
       case options[:transport]
@@ -127,7 +127,7 @@ Puppet::Face.define(:infrastructure, '0.0.1') do
     # compilation failures, usually
     raise catalog['message'] unless catalog.include? 'applications'
 
-    Puppet.warning 'Empty environment catalog' if catalog['applications'].empty?
+    Puppet.warning "Empty environment catalog for #{environment}" if catalog['applications'].empty?
 
     #JSON.parse(File.read('example.json'))
     catalog
