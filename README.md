@@ -26,7 +26,7 @@ You can read about the language features at https://docs.puppetlabs.com/pe/lates
 ### Displaying an infrastructure deployment plan:
 
     $ puppet infrastructure
-    
+
     Applications:
       Webapp[pao]:
                    Component                           Node
@@ -36,14 +36,14 @@ You can read about the language features at https://docs.puppetlabs.com/pe/lates
                  Web[pao_w2]                         agent3
                  Web[pao_w3]                         agent4
                   Lb[pao_lb]                         agent5
-    
+
     Runlist:
      * agent1 producing ["Sql[pao_db]"]
      * agent2 producing ["Http[pao_w1]"]
      * agent3 producing ["Http[pao_w2]"]
      * agent4 producing ["Http[pao_w3]"]
      * agent5 producing []
- 
+
 ### Deploying an infrastructure:
 
     $ puppet infrastructure deploy --transport ssh --map hostnames.yaml --key ~/.ssh/deploy.pem
@@ -60,11 +60,11 @@ You can read about the language features at https://docs.puppetlabs.com/pe/lates
     Enforcing configuration on agent2...
     Enforcing configuration on agent3...
     Enforcing configuration on agent4...
-    
+
     Node failues:
      * agent2:
         produces: ["Http[pao_w1]"]
-    
+
     Skipped due to failed requirements:
      * agent5:
         consumes: ["Http[pao_w1]"]
@@ -119,7 +119,25 @@ puppet_authorization::rule { 'puppetlabs environment':
   match_request_method => 'get',
   allow                => ['master.puppetlabs.vm'],
   sort_order           => 510,
+  path                 => "/etc/puppetlabs/puppetserver/conf.d/auth.conf"
 }
+```
+
+You also need to allow requests on the legacy Puppet `auth.conf` found in
+`/etc/puppetlabs/puppet/auth.conf`, add this below the `/puppet/v3/environments`
+entry:
+
+```
+path /puppet/v3/environment
+method find
+allow *
+```
+
+Finally on the Puppet Master you must enable App Management:
+
+```
+[master]
+app_management = true
 ```
 
 #### MCollective auth configuration
